@@ -1,0 +1,9 @@
+# Altri statment dopo main
+
+main
+	int i := 45.45;
+end main;
+
+main
+	var i :=  45;
+end main;

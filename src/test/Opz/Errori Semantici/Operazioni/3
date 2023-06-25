@@ -1,0 +1,10 @@
+# Divisione tra interi
+
+fun somma()
+	?. "Ciao";
+end fun;
+
+main
+	var t := 45 / 12;
+	?. t;
+end main;

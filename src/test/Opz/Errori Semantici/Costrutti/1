@@ -1,0 +1,9 @@
+# Void come parametro di write
+
+fun stampa(string messaggio)
+	?. messaggio;
+end fun;
+
+main
+    ?. stampa("ciao Modno");
+end main;

@@ -1,0 +1,10 @@
+# void come secondo parametro di una read
+
+fun stampa(string messaggio)
+	?. messaggio;
+end fun;
+
+main
+    integer x;
+    % x stampa("ciao Modno");
+end main;

@@ -1,0 +1,5 @@
+# Utilizzo di una variabile non dichiarata
+
+main
+	t := 45;
+end main;

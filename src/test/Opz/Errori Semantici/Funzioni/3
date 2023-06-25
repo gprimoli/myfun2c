@@ -1,0 +1,10 @@
+# Dichiarazione di una funzione void con return
+
+fun somma(integer a, integer b)
+	integer result := a + b;
+	return result;
+end fun;
+
+main
+	somma(12, 13);
+end main;

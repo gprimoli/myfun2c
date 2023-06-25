@@ -1,0 +1,152 @@
+import it.util.SintaticAnalysis.SintaticEnum;
+import it.util.SintaticAnalysis.SintaticNode;
+import it.util.SintaticAnalysis.Exception.SintaxException;
+
+//------------------------------------------TERMINALI----------------------------------------------------//
+terminal String     ID, INTEGER_CONST, REAL_CONST, STRING_CONST, BOOL_CONST;
+terminal            MAIN, FUN, END, RETURN, OUT, NULL;                          //Parole Principali
+terminal            LPAR, RPAR, COLON, SEMI, COMMA, OUTPAR;                     //Punteggiatura
+terminal            INTEGER, STRING, REAL, BOOL, VAR;                           //Tipi
+terminal            ASSIGN, PLUS, MINUS, TIMES, DIVINT, DIV, POW, STR_CONCAT;   //Operatori
+terminal            EQ, NE, LT, LE, GT, GE;                                     //Operatori: Confronto
+terminal            AND, OR, NOT;                                               //Operatori: Logica di Boole
+terminal            IF, THEN, ELSE, WHILE, LOOP;                                //Strutture logiche
+terminal            READ, WRITE, WRITELN, WRITEB, WRITET;                       //Funzioni stdin
+//-------------------------------------------------------------------------------------------------------//
+
+//---------------------------------------NON-TERMINALI----------------------------------------------------//
+nonterminal SintaticNode    Program;
+nonterminal SintaticNode    VarDeclList, Main;
+nonterminal SintaticNode    VarDecl, StatList;
+nonterminal SintaticNode    Type, AssignStat, IdListInit, IdListInitObbl, IdList;
+nonterminal SintaticNode    ParamDeclList, NonEmptyParamDeclList, ParDecl;
+nonterminal SintaticNode    Stat, IfStat, Else, WhileStat;
+nonterminal SintaticNode    FunList, Fun, ReadStat, WriteStat, CallFun;
+nonterminal SintaticNode    ExprList, Expr;
+//-------------------------------------------------------------------------------------------------------//
+
+//---------------------------------------PRECEDENZE------------------------------------------------------//
+precedence right COMMA;
+precedence left OR;                                     // (a OR b) OR c
+precedence left AND;                                    // "
+precedence right NOT;                                   // NOT b (NOT c)
+precedence nonassoc EQ, NE, LT, LE, GT, GE;             // id=id=id => EROOR!
+precedence left STR_CONCAT;                             // ("asd" & "asd") & "asd"
+precedence left PLUS, MINUS;
+precedence left TIMES, DIVINT, DIV;
+precedence right POW;
+precedence left LPAR, RPAR;
+//-------------------------------------------------------------------------------------------------------//
+
+//---------------------------------------GRAMMATICA------------------------------------------------------//
+Program ::=     VarDeclList:v FunList:f Main:m                   {: RESULT = new SintaticNode(SintaticEnum.PROGRAM, v, f, m); :}
+                | VarDeclList:v FunList:f Main:m error           {: RESULT = new SintaticNode(SintaticEnum.PROGRAM, v, f, m); :};
+
+VarDeclList ::= /* empty */
+                | VarDecl:vd VarDeclList:vdl                     {: RESULT = new SintaticNode(SintaticEnum.VARDECLLIST, vd, vdl != null ? vdl.getChild().toArray() : null); :};
+
+
+FunList ::=     /* empty */
+                | Fun:f FunList:fl                               {: RESULT = new SintaticNode(SintaticEnum.FUNLIST, f, fl != null ? fl.getChild().toArray() : null); :};
+
+
+Main ::=        MAIN VarDeclList:vdl StatList:sl END MAIN SEMI   {: RESULT = new SintaticNode(SintaticEnum.MAIN, vdl, sl); :};
+
+VarDecl ::=     Type:t IdListInit:ili SEMI                       {: RESULT = new SintaticNode(SintaticEnum.VARDECL, t, ili); :}
+	            | VAR IdListInitObbl:ilio SEMI                   {: RESULT = new SintaticNode(SintaticEnum.VARDECL, new SintaticNode(SintaticEnum.VAR), ilio); :};
+
+Type ::=        INTEGER                                          {: RESULT = new SintaticNode(SintaticEnum.INTEGER); :}
+                | BOOL                                           {: RESULT = new SintaticNode(SintaticEnum.BOOL); :}
+                | REAL                                           {: RESULT = new SintaticNode(SintaticEnum.REAL); :}
+                | STRING                                         {: RESULT = new SintaticNode(SintaticEnum.STRING); :};
+//Qui si potrebbe aggiungere Error e farlo diventare VAR il problema è gestire dopo fun(ParDecl)
+
+IdListInit ::=  ID:i                                             {: RESULT = new SintaticNode(SintaticEnum.ID, i); :}
+	            | IdListInit:ili COMMA ID:i                      {: RESULT = new SintaticNode(SintaticEnum.IDLISTINIT, ili, new SintaticNode(SintaticEnum.COMMA), new SintaticNode(SintaticEnum.ID, i)); :}
+	            | AssignStat:a                                   {: RESULT = a; :}
+	            | IdListInit:ili COMMA AssignStat:a              {: RESULT = new SintaticNode(SintaticEnum.IDLISTINIT, ili, new SintaticNode(SintaticEnum.COMMA), a); :};
+
+IdListInitObbl ::= AssignStat:a                                  {: RESULT = new SintaticNode(SintaticEnum.IDLISTINITOBBL, a); :}
+	            |  AssignStat:a COMMA IdListInitObbl:olio        {: RESULT = new SintaticNode(SintaticEnum.IDLISTINITOBBL, a, new SintaticNode(SintaticEnum.COMMA), olio != null ? olio.getChild().toArray() : null); :};
+
+Fun ::=         FUN ID:i LPAR ParamDeclList:pdl RPAR COLON Type:t VarDeclList:vdl StatList:sl END FUN SEMI
+                                                                 {: RESULT = new SintaticNode(SintaticEnum.FUN, i, pdl, t, vdl, sl); :}
+	            | FUN ID:i LPAR ParamDeclList:pdl RPAR VarDeclList:vdl StatList:sl END FUN SEMI
+                                                                 {: RESULT = new SintaticNode(SintaticEnum.FUN, i, pdl, vdl, sl); :};
+
+ParamDeclList ::= /*empty */
+                | NonEmptyParamDeclList:nepdl                    {: RESULT = nepdl; :};
+
+NonEmptyParamDeclList ::= ParDecl:pd                             {: RESULT = pd; :}
+	            | NonEmptyParamDeclList:nepdl COMMA ParDecl:pd   {: RESULT = new SintaticNode(SintaticEnum.PARAMDECLLIST, nepdl, new SintaticNode(SintaticEnum.COMMA), pd); :};
+
+ParDecl ::=     Type:t ID:i                                      {: RESULT = new SintaticNode(SintaticEnum.PARDECL, t, new SintaticNode(SintaticEnum.ID, i)); :}
+	            | OUT Type:t ID:i                                {: RESULT = new SintaticNode(SintaticEnum.PARDECL, t, new SintaticNode(SintaticEnum.OUT), new SintaticNode(SintaticEnum.ID, i)); :};
+
+StatList ::=    /*empty */
+	            | Stat:s StatList:sl                             {: RESULT = new SintaticNode(SintaticEnum.STATLIST, s, sl != null ? sl.getChild().toArray() : null); :};
+
+Stat ::=        IfStat:is SEMI                                   {: RESULT = is; :}
+	            | WhileStat:ws SEMI                              {: RESULT = ws; :}
+	            | ReadStat:rs SEMI                               {: RESULT = rs; :}
+	            | WriteStat:ws SEMI                              {: RESULT = ws; :}
+	            | AssignStat:as SEMI                             {: RESULT = as; :}
+	            | CallFun:cf SEMI                                {: RESULT = cf; :}
+	            | RETURN Expr:e SEMI                             {: RESULT = new SintaticNode(SintaticEnum.RETURN, e); :};
+
+IfStat ::=      IF Expr:e THEN VarDeclList:vdl StatList:sl Else:e1 END IF
+                                                                 {: RESULT = new SintaticNode(SintaticEnum.IFSTAT, e, vdl, sl, e1); :};
+
+Else ::=        /* empty */
+                | ELSE VarDeclList:vdl StatList:sl               {: RESULT = new SintaticNode(SintaticEnum.ELSESTAT, vdl, sl); :};
+
+WhileStat ::=   WHILE Expr:e LOOP VarDeclList:vdl StatList:sl END LOOP
+                                                                 {: RESULT = new SintaticNode(SintaticEnum.WHILESTAT, e, vdl, sl); :};
+
+ReadStat ::=    READ IdList:il Expr:e                            {: RESULT = new SintaticNode(SintaticEnum.READSTAT, il, e); :}
+	            | READ IdList:il                                 {: RESULT = new SintaticNode(SintaticEnum.READSTAT, il); :};
+
+IdList ::=      ID:i                                             {: RESULT = new SintaticNode(SintaticEnum.IDLIST, new SintaticNode(SintaticEnum.ID, i)); :}
+	            | IdList:il COMMA ID:i                           {: RESULT = new SintaticNode(SintaticEnum.IDLIST, il, new SintaticNode(SintaticEnum.COMMA), new SintaticNode(SintaticEnum.ID, i)); :};
+
+WriteStat ::=   WRITE  Expr:e                                    {: RESULT = new SintaticNode(SintaticEnum.WRITESTAT, e); :}
+	            | WRITELN  Expr:e                                {: RESULT = new SintaticNode(SintaticEnum.WRITESTAT, "LN", e); :}
+	            | WRITET  Expr:e                                 {: RESULT = new SintaticNode(SintaticEnum.WRITESTAT, "ET", e); :}
+	            | WRITEB  Expr:e                                 {: RESULT = new SintaticNode(SintaticEnum.WRITESTAT, "EB", e); :};
+
+AssignStat ::=  ID:i ASSIGN Expr:e                               {: RESULT = new SintaticNode(SintaticEnum.ASSIGNSTAT, new SintaticNode(SintaticEnum.ID, i), e); :};
+
+CallFun ::=     ID:i LPAR ExprList:el RPAR                       {: RESULT = new SintaticNode(SintaticEnum.CALLFUN, i, el); :}
+	            | ID:i LPAR RPAR                                 {: RESULT = new SintaticNode(SintaticEnum.CALLFUN, i); :};
+
+ExprList ::=    Expr:e                                           {: RESULT = e; :}
+	            | Expr:e COMMA ExprList:el                       {: RESULT = new SintaticNode(SintaticEnum.EXPRLIST, e, new SintaticNode(SintaticEnum.COMMA), el); :}
+	            | OUTPAR ID:i                                    {: RESULT = new SintaticNode(SintaticEnum.EXPRLIST, new SintaticNode(SintaticEnum.OUTPAR), new SintaticNode(SintaticEnum.ID, i)); :}
+	            | OUTPAR ID:i COMMA ExprList:el                  {: RESULT = new SintaticNode(SintaticEnum.EXPRLIST, new SintaticNode(SintaticEnum.OUTPAR), new SintaticNode(SintaticEnum.ID, i), new SintaticNode(SintaticEnum.COMMA), el); :};
+
+Expr ::=        BOOL_CONST:b                                     {: RESULT = new SintaticNode(SintaticEnum.BOOL_CONST, b); :}
+	            | INTEGER_CONST:i                                {: RESULT = new SintaticNode(SintaticEnum.INTEGER_CONST, i); :}
+	            | REAL_CONST:r                                   {: RESULT = new SintaticNode(SintaticEnum.REAL_CONST, r); :}
+	            | STRING_CONST:s                                 {: RESULT = new SintaticNode(SintaticEnum.STRING_CONST, s); :}
+	            | ID:i                                           {: RESULT = new SintaticNode(SintaticEnum.ID, i); :}
+	            | NULL                                           {: RESULT = new SintaticNode(SintaticEnum.NULL); :}
+	            | CallFun:c                                      {: RESULT = c; :}
+	            | Expr:e PLUS Expr:e1                            {: RESULT = new SintaticNode(SintaticEnum.EXPR, "PLUS", e, e1); :}
+	            | Expr:e MINUS Expr:e1                           {: RESULT = new SintaticNode(SintaticEnum.EXPR, "MINUS", e, e1); :}
+	            | Expr:e TIMES Expr:e1                           {: RESULT = new SintaticNode(SintaticEnum.EXPR, "TIMES", e, e1); :}
+	            | Expr:e DIV Expr:e1                             {: RESULT = new SintaticNode(SintaticEnum.EXPR, "DIV", e, e1); :}
+	            | Expr:e DIVINT Expr:e1                          {: RESULT = new SintaticNode(SintaticEnum.EXPR, "DIVINT", e, e1); :}
+	            | Expr:e AND Expr:e1                             {: RESULT = new SintaticNode(SintaticEnum.EXPR, "AND", e, e1); :}
+	            | Expr:e POW Expr:e1                             {: RESULT = new SintaticNode(SintaticEnum.EXPR, "POW", e, e1); :}
+	            | Expr:e STR_CONCAT Expr:e1                      {: RESULT = new SintaticNode(SintaticEnum.EXPR, "STR_CONCAT", e, e1); :}
+	            | Expr:e OR Expr:e1                              {: RESULT = new SintaticNode(SintaticEnum.EXPR, "OR", e,  e1); :}
+	            | Expr:e GT Expr:e1                              {: RESULT = new SintaticNode(SintaticEnum.EXPR, "GT", e,  e1); :}
+	            | Expr:e GE Expr:e1                              {: RESULT = new SintaticNode(SintaticEnum.EXPR, "GE", e,  e1); :}
+	            | Expr:e LT Expr:e1                              {: RESULT = new SintaticNode(SintaticEnum.EXPR, "LT", e,  e1); :}
+	            | Expr:e LE Expr:e1                              {: RESULT = new SintaticNode(SintaticEnum.EXPR, "LE", e, e1); :}
+	            | Expr:e EQ Expr:e1                              {: RESULT = new SintaticNode(SintaticEnum.EXPR, "EQ", e, e1); :}
+	            | Expr:e NE Expr:e1                              {: RESULT = new SintaticNode(SintaticEnum.EXPR, "NE", e, e1); :}
+	            | MINUS Expr:e                                   {: RESULT = new SintaticNode(SintaticEnum.EXPR, "MINUS", e); :}
+	            | NOT Expr:e                                     {: RESULT = new SintaticNode(SintaticEnum.EXPR, "NOT", e); :}
+	            | LPAR Expr:e RPAR                               {: RESULT = new SintaticNode(SintaticEnum.EXPR, "PAR", e); :};
+//-------------------------------------------------------------------------------------------------------//

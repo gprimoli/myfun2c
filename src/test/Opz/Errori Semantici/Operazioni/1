@@ -1,0 +1,10 @@
+# Op tra int e String
+
+fun somma()
+	?. "Ciao";
+end fun;
+
+main
+	var t := 45;
+	t := 45 + "somma";
+end main;

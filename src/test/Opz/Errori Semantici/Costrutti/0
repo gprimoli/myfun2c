@@ -1,0 +1,8 @@
+# if con parametro non boolean
+
+main
+    var x := 12;
+    if x then
+    	x := 13;
+    end if;
+end main;

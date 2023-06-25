@@ -1,0 +1,8 @@
+# while con parametro non boolean
+
+main
+    var x := 12;
+	while x loop
+		var incremento := 1;
+	end loop;
+end main;

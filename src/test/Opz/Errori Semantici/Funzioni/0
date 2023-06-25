@@ -1,0 +1,10 @@
+# Dichiarazione di una funzione e restituzione di un tipo diverso da quello dichiarato
+
+fun somma(integer a, integer b): integer
+	real result := a + b;
+	return result;
+end fun;
+
+main
+	somma(12, 13);
+end main;

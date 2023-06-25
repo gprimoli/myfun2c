@@ -1,0 +1,5 @@
+#* commento non chiuso
+
+main
+	? 'ciao mondo';
+end main;

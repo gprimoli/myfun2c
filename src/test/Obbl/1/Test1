@@ -1,0 +1,89 @@
+#*
+Per testare MyFun2C, oltre ad utilizzare il programma sviluppato nell'esercizio 4, si sviluppi e compili anche il programma MyFun che svolga (a richiesta tramite menu)
+1. la somma di due numeri
+2. la moltiplicazione di due numeri utilizzando la somma
+3. la divisione intera fra due numeri positivi
+4. l’elevamento a potenza
+5. la successione di Fibonacci
+*#
+
+fun sumFun(real a, real b): real
+	var result := a + b;
+	return result;
+end fun;
+
+fun molFun(real a, integer b): real
+	var result := 0.0, i := 0;
+	while i < b loop
+        result := result + a;
+        i := i + 1;
+    end loop;
+	return result;
+end fun;
+
+fun divFun(integer a, integer b): integer
+	return a div b;
+end fun;
+
+fun powFun(real a, real b): real
+    var c := a^b;
+	return c;
+end fun;
+
+fun fibFun(integer a)
+    var primo := 1, secondo := 1;
+    integer i := 2, terzo := 0;
+	while i < a loop
+	    terzo := primo + secondo;
+	    primo := secondo;
+	    secondo := terzo;
+        i := i + 1;
+    end loop;
+    ?. "La successione di fibonacci per il numero: " & a & " è " & terzo;
+end fun;
+
+main
+    var risp := 0;
+    integer a, b;
+    real c, d;
+
+	while risp != -1 loop
+	    ?. "Menu:";
+	    ?. "1) sumFun";
+	    ?. "2) molFun";
+	    ?. "3) divFun";
+	    ?. "4) powFun";
+	    ?. "5) fibFun";
+	    ?. "-1) Esci";
+	    % risp "Fai la tua scelta";
+
+	    if risp = 1 then
+	        % c "Inserisci il primo numero da sommare";
+            % d "Inserisci il secondo numero da sommare";
+            ?. sumFun(c, d);
+	    else
+	        if risp = 2 then
+	            % c "Inserisci il primo numero da moltiplicare";
+                % d "Inserisci il secondo numero da moltiplicare";
+                ?. molFun(c, d);
+        	else
+	            if risp = 3 then
+	                % a "Inserisci il primo numero da dividere";
+                    % b "Inserisci il secondo numero da dividere";
+                    ?. divFun(a, b);
+        	    else
+	                if risp = 4 then
+	                    % c "Inserisci il primo numero da elevare";
+                        % d "Inserisci il secondo numero da elevare";
+                        ?. powFun(c, d);
+        	        else
+        	            if risp = 5 then
+                            % a "Inserisci il primo numero da fibbonare";
+                            fibFun(a);
+                        end if;
+        	        end if;
+        	    end if;
+        	end if;
+	    end if;
+    end loop;
+end main;

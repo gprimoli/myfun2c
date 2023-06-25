@@ -1,0 +1,5 @@
+# Utilizzo di una funzione non dichiarata
+
+main
+	test();
+end main;
